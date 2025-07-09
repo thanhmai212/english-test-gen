@@ -1,32 +1,5 @@
-const examContainer = document.getElementById('exam');
-const generateButton = document.getElementById('generate-btn');
-const downloadButton = document.getElementById('download-btn');
-
-generateButton.addEventListener('click', async () => {
-  examContainer.innerHTML = '<p>Đang tạo đề thi...</p>';
-  try {
-    const examText = await fetchGeminiPrompt();
-    examContainer.innerHTML = `<pre>${sanitizeHTML(examText)}</pre>`;
-  } catch (error) {
-    console.error(error);
-    examContainer.innerHTML = '<p>Lỗi khi tạo đề.</p>';
-  }
-});
-
-downloadButton.addEventListener('click', () => {
-  const element = document.createElement('a');
-  const text = examContainer.innerText;
-  const blob = new Blob([text], { type: 'application/pdf' });
-
-  const fileURL = URL.createObjectURL(blob);
-  element.setAttribute('href', fileURL);
-  element.setAttribute('download', 'de-thi-tieng-anh.pdf');
-  element.click();
-  URL.revokeObjectURL(fileURL);
-});
-
-async function fetchGeminiPrompt() {
-  const prompt = `
+// PROMPT tạo đề thi
+const prompt = `
 Bạn là một giáo viên tiếng Anh chuyên nghiệp, nhiều năm kinh nghiệm giảng dạy học sinh cấp 2 và cấp 3, từng tốt nghiệp chuyên Anh trường THPT chuyên Hà Nội – Amsterdam, và có nền tảng học thuật quốc tế. Phong cách dạy của bạn khoa học, rõ ràng, dễ hiểu, súc tích, nhưng vẫn đầy đủ và phân hóa cao.
 
 Hãy tạo một đề thi tiếng Anh tổng hợp gồm ít nhất 40 câu hỏi, theo đúng cấu trúc bên dưới, đáp ứng đầy đủ các yêu cầu sau:
@@ -57,33 +30,43 @@ Phần 11: Sentence Insertion – Câu 37–40
 
 ❗️Chỉ hiển thị nội dung đề thi. Không giải thích. Không giới thiệu. Không nói gì thêm.
 👉 Trả lời trực tiếp bằng nội dung đề thi.
-  `;
+`;
 
-  const response = await fetch('/api/gemini', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ prompt })
-  });
+// Khi trang đã load, gắn các sự kiện
+window.onload = () => {
+  document.querySelector('button[onclick="generateExam()"]').onclick = generateExam;
+  document.querySelector('button[onclick="downloadPDF()"]').onclick = downloadPDF;
+};
 
-  if (!response.ok) {
-    throw new Error('Lỗi gọi Gemini API');
+// Hàm gọi API Gemini qua proxy backend
+async function generateExam() {
+  const examDiv = document.getElementById('exam-content');
+  examDiv.innerText = "Đang tạo đề...";
+
+  try {
+    const response = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!response.ok) throw new Error("Không lấy được đề thi");
+
+    const data = await response.json();
+    examDiv.innerText = data.result;
+  } catch (err) {
+    console.error(err);
+    examDiv.innerText = "❌ Lỗi khi tạo đề.";
   }
-
-  const data = await response.json();
-  return data.result;
 }
 
-// Ngăn XSS trong nội dung hiển thị
-function sanitizeHTML(str) {
-  return str.replace(/[&<>"']/g, function (m) {
-    return {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    }[m];
-  });
+// Hàm tải xuống đề thi dạng PDF
+function downloadPDF() {
+  const element = document.getElementById('exam-content');
+  if (!element || element.innerText.trim() === "") {
+    alert("Vui lòng tạo đề trước khi tải PDF.");
+    return;
+  }
+
+  html2pdf().from(element).save('de-thi-tieng-anh.pdf');
 }
