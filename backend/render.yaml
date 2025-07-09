@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: english-test-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: GOOGLE_API_KEY
+        value: AIzaSyBjWskNkBL9ruQP_sZWd93tu1b5LnwUqEY
