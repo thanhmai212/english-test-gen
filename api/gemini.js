@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
 
-    const response = await fetch(apiUrl, {
+    const geminiRes = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -22,17 +22,16 @@ export default async function handler(req, res) {
       }),
     });
 
-    const data = await response.json();
+    const data = await geminiRes.json();
+    const result = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (data.candidates && data.candidates[0]) {
-      const text = data.candidates[0].content.parts[0].text;
-      return res.status(200).json({ result: text });
+    if (result) {
+      res.status(200).json({ result });
     } else {
-      return res.status(500).json({ error: 'No response from Gemini' });
+      res.status(500).json({ error: 'No response from Gemini API' });
     }
   } catch (error) {
-    console.error('Gemini API error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ error: 'Internal server error' });
   }
 }
 
