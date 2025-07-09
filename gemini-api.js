@@ -34,7 +34,7 @@ Phần 11: Sentence Insertion – Câu 37–40
 `;
 
 async function fetchGeminiPrompt() {
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' + API_KEY;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
 
   const body = {
     contents: [{ parts: [{ text: prompt }] }]
